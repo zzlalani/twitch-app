@@ -46,16 +46,21 @@ $app->get('/', function ($request, $response, $args) {
     return $this->view->render($response, 'home.html', [
         'authUrl' => $authUrl
     ]);
-});
+})->setName('home');
 
 $app->get('/oauth', function ($request, $response, $args) {
     $q = $request->getQueryParams();
     $t = $this->get('settings')['twitch'];
 
-    $helixGuzzleClient = new HelixGuzzleClient($t['clientId']);
-    $newTwitchApi = new NewTwitchApi($helixGuzzleClient, $t['clientId'], $t['clientSecret']);
-    $resp = $newTwitchApi->getOauthApi()->getUserAccessToken($q['code'], $q['scope']);
-    var_dump($resp);
+    try {
+        $helixGuzzleClient = new HelixGuzzleClient($t['clientId']);
+        $newTwitchApi = new NewTwitchApi($helixGuzzleClient, $t['clientId'], $t['clientSecret']);
+        $resp = $newTwitchApi->getOauthApi()->getUserAccessToken($q['code'], $t['redirectURL']);
+        var_dump($resp);
+    }
+    catch (Exception $e) {
+        return $response->withRedirect($this->router->forPath('home'));
+    }
 });
 
 $app->run();
