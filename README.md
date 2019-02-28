@@ -22,6 +22,12 @@ Twitch Api Webservices Implementation with PHP7
 - [New Twitch API (Helix) ^2.1](https://github.com/nicklaw5/twitch-api-php) Twitch Client API for PHP7
 - [slim/twig-view ^2.4](https://github.com/slimphp/Twig-View) Twig View Templates for Slim Framework
 
+#### Challenges
+
+- For the requirements to list all the events of the streamer I have made a console at second (streamer) page where it shows all the Topics (Events) occurs  at streamer channel
+- For some reasons the pubsub was not able to validate my php server created auth token and it is not bringing the events although I have shown the implementation in the code
+- 
+
 #### Questions
 
 - How would you deploy the above on AWS? (ideally a rough architecture diagram will help)
