@@ -16,7 +16,7 @@ $config = [
             'clientSecret' => 'zn2p9jemzfxcrh6mqwn08fcnvq3w2g',
             'redirectURL' => 'http://localhost/oauth',
             'responseType' => 'code',
-            'scope' => 'user:edit+user:read:email',
+            'scope' => 'user:edit+user:read:email+bits:read+channel_subscriptions+whispers:read',
         ],
     ],
 ];
@@ -116,16 +116,54 @@ $app->get('/streamer/{streamer_name}', function ($request, $response, $args) {
         $newTwitchApi = new NewTwitchApi($helixGuzzleClient, $t['clientId'], $t['clientSecret']);
         $resp = $newTwitchApi->getUsersApi()->getUserByUsername($args['streamer_name']);
         $userData = json_decode($this->get('dataRead')($resp), true);
-        var_dump($userData);
 
-        return $this->view->render($response, 'second.html', [
+        $session = json_decode($_SESSION[TOKEN], true);
+
+        return $this->view->render($response, 'streamer.html', [
             'streamerName' => $args['streamer_name'],
-            'videoId' => $userData['data'][0]['id']
+            'name' => $userData['data'][0]['display_name'],
+            'img' => $userData['data'][0]['profile_image_url'],
+            'desc' => $userData['data'][0]['description'],
+            'channelId' => $userData['data'][0]['id'],
+            'clientId' => $t['clientId'],
+            'accessToken' => $session['access_token'],
         ]);
     }
     catch (Exception $e) {
         return $response->withRedirect('/');
     }
 });
+
+$app->get('/me', function ($request, $response, $args) {
+    $t = $this->get('settings')['twitch'];
+    try {
+        $helixGuzzleClient = new HelixGuzzleClient($t['clientId']);
+        $newTwitchApi = new NewTwitchApi($helixGuzzleClient, $t['clientId'], $t['clientSecret']);
+
+        $session = json_decode($_SESSION[TOKEN], true);
+        $resp = $newTwitchApi->getUsersApi()->getUserByAccessToken($session['access_token']);
+        $userData = json_decode($this->get('dataRead')($resp), true);
+
+        return $response->withRedirect('/streamer/' . $userData['data'][0]['login']);
+    }
+    catch (Exception $e) {
+        return $response->withRedirect('/');
+    }
+});
+
+$app->get('/logout', function ($request, $response, $args) {
+    $t = $this->get('settings')['twitch'];
+    try {
+        $helixGuzzleClient = new HelixGuzzleClient($t['clientId']);
+        $session = json_decode($_SESSION[TOKEN], true);
+        $helixGuzzleClient->post('https://id.twitch.tv/oauth2/revoke?client_id='.$t['clientId'].'&token='.$session['access_token']);
+        session_destroy();
+        return $response->withRedirect('/');
+    }
+    catch (Exception $e) {
+        return $response->withRedirect('/');
+    }
+});
+
 
 $app->run();

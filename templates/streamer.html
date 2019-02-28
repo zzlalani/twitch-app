@@ -1,0 +1,161 @@
+{% extends "layout.html" %}
+
+{% block head %}
+{{ parent() }}
+<style>
+    textarea {
+        background-color: #000;
+        border: 1px solid #000;
+        color: #00ff00;
+        padding: 8px;
+        font-family: Courier New,Courier,Lucida Sans Typewriter,Lucida Typewriter,monospace;
+        font-size: 12px;
+        width:100%
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="media mt-5 text-left">
+    <img class="mr-3" src="{{ img }}" alt="{{ name }}" height="64">
+    <div class="media-body">
+        <h5 class="mt-0">{{ name }}</h5>
+        {{ desc }}
+    </div>
+</div>
+
+<div class="container text-left mt-5">
+    <div class="row">
+        <div class="col-md-9">
+            <iframe
+                    src="https://player.twitch.tv/?channel={{ streamerName }}&autoplay=true"
+                    height="355"
+                    width="746"
+                    frameborder="0"
+                    scrolling="no"
+                    allowfullscreen="true">
+            </iframe>
+
+            <div class="mt-4">
+                <h5>Live Events:</h5>
+                <div style="display:none" class="socket">
+                    <textarea class="ws-output" rows="17" readonly></textarea>
+                </div>
+            </div>
+
+        </div>
+        <div class="col-md-3">
+            <iframe frameborder="0"
+                    scrolling="no"
+                    id="chat_embed"
+                    src="https://www.twitch.tv/embed/{{ streamerName }}/chat"
+                    height="755"
+                    width="300">
+            </iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block footer %}
+{{ parent() }}
+<script>
+    let accessToken = '{{ accessToken }}';
+    let channelId = '{{ channelId }}';
+    let channelConnected = false;
+    let domReady = false;
+    let ws;
+
+    function nonce(length) {
+        let text = "";
+        let possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        for (var i = 0; i < length; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
+    }
+
+    function heartbeat() {
+        let message = {
+            type: 'PING'
+        };
+        $('.ws-output').append('SENT: ' + JSON.stringify(message) + '\n');
+        ws.send(JSON.stringify(message));
+    }
+
+    function listen() {
+        let message = {
+            type: 'LISTEN',
+            nonce: nonce(15),
+            data: {
+                topics: [
+                    'channel-bits-events-v2.' + channelId,
+                    'channel-bits-badge-unlocks.' + channelId,
+                    'channel-subscribe-events-v1.' + channelId,
+                    'channel-commerce-events-v1.' + channelId,
+                    'whispers.' + channelId
+                ],
+                auth_token: accessToken
+            }
+        };
+        $('.ws-output').append('SENT: ' + JSON.stringify(message) + '\n');
+        ws.send(JSON.stringify(message));
+    }
+
+    function connect() {
+        let heartbeatInterval = 1000 * 60; //ms between PING's
+        let reconnectInterval = 1000 * 3; //ms to wait before reconnect
+        let heartbeatHandle;
+
+        ws = new WebSocket('wss://pubsub-edge.twitch.tv');
+
+        ws.onopen = function(event) {
+            $('.ws-output').append('INFO: Socket Opened\n');
+            heartbeat();
+            heartbeatHandle = setInterval(heartbeat, heartbeatInterval);
+            channelConnected = true;
+            startListening();
+        };
+
+        ws.onerror = function(error) {
+            $('.ws-output').append('ERR:  ' + JSON.stringify(error) + '\n');
+        };
+
+        ws.onmessage = function(event) {
+            message = JSON.parse(event.data);
+            $('.ws-output').append('RECV: ' + JSON.stringify(message) + '\n');
+            if (message.type == 'RECONNECT') {
+                $('.ws-output').append('INFO: Reconnecting...\n');
+                setTimeout(connect, reconnectInterval);
+            }
+        };
+
+        ws.onclose = function() {
+            $('.ws-output').append('INFO: Socket Closed\n');
+            clearInterval(heartbeatHandle);
+            $('.ws-output').append('INFO: Reconnecting...\n');
+            setTimeout(connect, reconnectInterval);
+        };
+
+    }
+
+    function startListening () {
+        if (channelConnected && domReady) {
+            listen();
+        }
+
+    }
+
+    $(function() {
+        connect();
+        $('.socket').show();
+        domReady = true;
+        startListening();
+    });
+
+</script>
+
+{% endblock %}
+
+{% block title %} Streaming {{ streamerName }} {% endblock %}
