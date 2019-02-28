@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<h3 class="mt-5">Set your favorite Twitch streamer name</h3>
+<div class="container text-left mt-5">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <form method="post">
+                <div class="form-group">
+                    <label for="streamer_name">Streamer name</label>
+                    <input type="text" class="form-control" name="streamer_name" id="streamer_name" placeholder="Streamer Name" required>
+                    <small id="emailHelp" class="form-text text-muted">Please sent the twitch streamer name who has live stream right now.</small>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block title %} Set Twitch streamer name {% endblock %}
