@@ -14,7 +14,7 @@ $config = [
         'twitch' => [
             'clientId' => 'iwiw3fkt0fslz4e01sp3evf4tm1zhh',
             'clientSecret' => 'zn2p9jemzfxcrh6mqwn08fcnvq3w2g',
-            'redirectURL' => 'http://localhost/oauth',
+            'redirectURL' => 'https://twitch-app-2.herokuapp.com/oauth',
             'responseType' => 'code',
             'scope' => 'user:edit+user:read:email+bits:read+channel_subscriptions+whispers:read',
         ],
